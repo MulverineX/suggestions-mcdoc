@@ -140,7 +140,20 @@ dispatch suggestion:event_type["player/block_place"] to CancelableEventHandler<s
 
 /// Ran before interface_open if applicable.
 dispatch suggestion:event_type["player/block_interact"] to struct PlayerBlockInteract {
+    block?: BlockPredicate,
 
+    /// Item used by the player to interact with the block, use an empty object (`{}`) to check if the player broke the block without a tool.
+    item?: (ItemPredicate | struct {}),
+
+    effects?: struct {
+        block?: struct {
+            run_function?: #[id="function"] string,
+        },
+
+        player?: struct {
+            ...PlayerEffects,
+        },
+    }
 }
 
 dispatch suggestion:event_type["player/entity_interact"] to struct PlayerEntityInteract {
