@@ -1,0 +1,20 @@
+use ::java::data::util::NumberProvider
+
+dispatch minecraft:entity_effect[change_scores] to struct EntityEffectChangeScores {
+    ops: [EntityEffectChangeScoresOps],
+}
+
+struct EntityEffectChangeScoresOps {
+    score: #[objective] string,
+    target: #[score_holder] string,
+    operation: ScoreboardOperation,
+    factor: NumberProvider,
+}
+
+enum(string) ScoreboardOperation {
+    Add = "add",
+    Multiply = "mul",
+    Modulus = "mod",
+    Minimum = "min",
+    Maximum = "max",
+}

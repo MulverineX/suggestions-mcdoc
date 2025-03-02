@@ -1,0 +1,258 @@
+use ::java::data::loot::LootCondition
+use ::java::data::advancement::predicate::ItemPredicate
+use ::java::data::advancement::predicate::BlockPredicate
+use ::java::data::enchantment::EntityEffect
+
+dispatch minecraft:resource[event_listener] to struct EventListener {
+    /// Event type id to listen for.
+    event: #[dispatcher_key="suggestion:event_type"] string,
+
+    /// Whether the event listener should be always active, or be disabled on every load & managed via `/event (event_listener) enable|disable [(actor_group)]`. Default is `true`.
+    /// If `false` and an actor group is provided upon enabling, the event listener will only be active for the specified actor group. #META#: This part of this suggestion is optional.
+    always_on?: boolean,
+
+    /// Predicates to check before running the event handler. If any of the conditions are not met, the event handler will not run & the vanilla results will continue as normal.
+    /// Ran with the context of the primary entity or block state/position involved in the event.
+    conditions?: (LootCondition | [LootCondition]),
+    
+    handler: suggestion:event_type[[event]],
+}
+
+type CancelableEventHandler<TYPE> = struct {
+    /// Whether to cancel the vanilla behavior/result of the event. Defaults to `false`.
+    /// If `true`, some scenarios will require the handler to act upon the event context to prevent the event from occurring again the next tick (eg. `living/death` requires the entity to either receive health or be removed).
+    /// If `true`, the vanilla statistic will not be incremented.
+    cancel_result?: boolean,
+
+    ...TYPE,
+}
+
+struct PlayerEffects {
+    /// Entity effects to apply to the player.
+    side_effects?: [EntityEffect] @ 1..,
+
+    /// Advancements to grant to the player, specific criteria if applicable.
+    grant_advancements?: struct {
+        [#[id="advancement"] string]?: (struct {
+            [string]?: struct {},
+        }),
+    },
+
+    /// Loot tables to give.
+	grant_loot?: [#[id="loot_table"] string],
+
+	/// Recipes to unlock.
+	grant_recipes?: [#[id="recipe"] string],
+
+	/// XP to add.
+	grant_experience?: int,
+}
+
+/// Block will disappear and reappear client-side if cancelled.
+dispatch suggestion:event_type["player/block_break"] to CancelableEventHandler<struct PlayerBlockBreak {
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    block?: BlockPredicate,
+
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    /// Tool used by the player to break the block, use an empty object (`{}`) to check if the player broke the block without a tool.
+    tool?: (ItemPredicate | struct {}),
+
+    effects?: struct {
+        block?: struct {
+            /// Whether to run the loot table when broken if applicable. Defaults to `true`.
+            drop?: boolean,
+
+            /// Whether to drop experience orbs when broken if applicable. Defaults to `true`.
+            experience?: boolean,
+
+            /// Ran before the block is broken, ran as the player, at the block.
+            run_function?: #[id="function"] string,
+        },
+
+        player?: struct {
+            /// Whether to attempt to damage the tool used to break the block if applicable. Defaults to `true`.
+            damage_tool?: boolean,
+
+            /// Ran before the tool receives damage if applicable.
+            run_function?: #[id(registry="function", tags="allowed")] string,
+
+            ...PlayerEffects,
+        },
+    },
+}>
+
+dispatch suggestion:event_type["player/block_trample"] to CancelableEventHandler<struct PlayerBlockTrample {
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    block?: BlockPredicate,
+
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    /// Crop on the farmland if applicable, use an empty object (`{}`) to check if the farmland has no crop.
+    crop?: (BlockPredicate | struct {}),
+
+    effects?: struct {
+        block?: struct {
+            /// Whether to run the crop loot table when trampled if applicable. Defaults to `true`.
+            drop?: boolean,
+
+            /// Ran before the block is trampled.
+            run_function?: #[id="function"] string,
+        },
+
+        player?: struct {
+            /// Ran before the crop is destroyed if applicable.
+            run_function?: #[id(registry="function", tags="allowed")] string,
+
+            ...PlayerEffects,
+        },
+    },
+}>
+
+/// Block will appear and disappear client-side if cancelled.
+dispatch suggestion:event_type["player/block_place"] to CancelableEventHandler<struct PlayerBlockPlace {
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    block?: BlockPredicate,
+
+    /// Behaves like `conditions`; if this is not met, the event handler will not run & the vanilla results will continue as normal.
+    /// Item used by the player to place the block.
+    item?: ItemPredicate,
+
+    effects?: struct {
+        block?: struct {
+            /// Whether to allow block updates around the placed block if applicable. Defaults to `true`.
+            allow_updates?: boolean,
+
+            /// Ran before the block is placed.
+            run_function?: #[id="function"] string,
+        },
+
+        player?: struct {
+            /// Whether to consume the item used to place the block if applicable. Defaults to `true`.
+            /// Client-side, the item will pop back into the slot if set to `false`.
+            consume_item?: boolean,
+
+            /// Ran before the item is consumed if applicable.
+            run_function?: #[id(registry="function", tags="allowed")] string,
+
+            ...PlayerEffects,
+        },
+    },
+}>
+
+/// Ran before interface_open if applicable.
+dispatch suggestion:event_type["player/block_interact"] to struct PlayerBlockInteract {
+
+}
+
+dispatch suggestion:event_type["player/entity_interact"] to struct PlayerEntityInteract {
+
+}
+
+dispatch suggestion:event_type["player/consume_item"] to struct PlayerConsumeItem {
+
+}
+
+/// Runs after block_interact if applicable.
+dispatch suggestion:event_type["player/interface_open"] to struct PlayerInterfaceOpen {
+    
+}
+
+dispatch suggestion:event_type["player/interface_interact"] to struct PlayerInterfaceInteract {
+
+}
+
+dispatch suggestion:event_type["player/interface_close"] to struct PlayerInterfaceClose {
+
+}
+
+dispatch suggestion:event_type["player/item_drop"] to CancelableEventHandler<struct PlayerItemDrop {
+
+}>
+
+dispatch suggestion:event_type["player/item_pickup"] to CancelableEventHandler<struct PlayerItemPickup {
+
+}>
+
+dispatch suggestion:event_type["player/hand_swap"] to struct PlayerItemSwap {
+
+}
+
+dispatch suggestion:event_type["player/hotbar_scroll"] to struct PlayerHotbarScroll {
+
+}
+
+dispatch suggestion:event_type["player/walk"] to struct PlayerWalk {
+
+}
+
+/// Mounted input.
+dispatch suggestion:event_type["player/direct"] to struct PlayerDirect {
+
+}
+
+dispatch suggestion:event_type["player/swim"] to struct PlayerSwim {
+
+}
+
+dispatch suggestion:event_type["player/crawl"] to struct PlayerCrawl {
+
+}
+
+/// Creative/spectator flight.
+dispatch suggestion:event_type["player/fly"] to struct PlayerFly {
+
+}
+
+dispatch suggestion:event_type["player/jump"] to struct PlayerJump {
+
+}
+
+dispatch suggestion:event_type["player/toggle_sprint"] to struct PlayerSprint {
+
+}
+
+dispatch suggestion:event_type["player/toggle_sneak"] to struct PlayerSneak {
+
+}
+
+/// Elytra flight.
+dispatch suggestion:event_type["player/start_glide"] to struct PlayerGlide {
+
+}
+
+/// Elytra landing.
+dispatch suggestion:event_type["player/land_glide"] to struct PlayerGlideEnd {
+
+}
+
+/// Red flash will still appear client-side if the damage source is a player if cancelled. Runs before the death animation if applicable.
+dispatch suggestion:event_type["living/damaged"] to CancelableEventHandler<struct LivingDamaged {
+
+}>
+
+/// Runs before death particles are spawned, before `entity/dead`.
+dispatch suggestion:event_type["living/death"] to CancelableEventHandler<struct LivingDeath {
+
+}>
+
+dispatch suggestion:event_type["living/healed"] to CancelableEventHandler<struct LivingHealed {
+
+}>
+
+dispatch suggestion:event_type["entity/spawn"] to struct LivingSpawn {
+
+}
+
+/// Runs after `living/death` & after entity is removed from clients, before the class instance is deleted.
+dispatch suggestion:event_type["entity/dead"] to struct EntityDead {
+
+}
+
+/// Runs when an entity is loaded from a chunk that was previously unloaded.
+dispatch suggestion:event_type["entity/loaded"] to struct EntityLoaded {
+
+}
+
+/// Runs before an entity is unloaded when a chunk is being unloaded.
+dispatch suggestion:event_type["entity/unloaded"] to struct EntityUnloaded {
+
+}
