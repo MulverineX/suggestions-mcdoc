@@ -18,3 +18,16 @@ enum(string) ScoreboardOperation {
     Minimum = "min",
     Maximum = "max",
 }
+
+// #META#: This part of this suggestion is optional.
+dispatch minecraft:entity_effect[change_actor_groups] to struct EntityEffectChangeActorGroups {
+    /// Actor groups to add the entity to.
+    add?: struct {
+        [#[id="actor_group"] string]?: struct {}
+    },
+
+    /// Actor groups to remove the entity from.
+    remove?: struct {
+        [#[id="actor_group"] string]?: struct {}
+    },
+}

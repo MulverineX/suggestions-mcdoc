@@ -8,13 +8,13 @@ dispatch minecraft:resource[event_listener] to struct EventListener {
     event: #[dispatcher_key="suggestion:event_type"] string,
 
     /// Whether the event listener should be always active, or be disabled on every load & managed via `/event (event_listener) enable|disable [(actor_group)]`. Default is `true`.
-    /// If `false` and an actor group is provided upon enabling, the event listener will only be active for the specified actor group. #META#: This part of this suggestion is optional.
+    /// If `false` and an actor group is provided upon enabling, the event listener will only be active for the specified actor group. #META#: The actor groups part of this suggestion is optional.
     always_on?: boolean,
 
     /// Predicates to check before running the event handler. If any of the conditions are not met, the event handler will not run & the vanilla results will continue as normal.
     /// Ran with the context of the primary entity or block state/position involved in the event.
     conditions?: (LootCondition | [LootCondition]),
-    
+
     handler: suggestion:event_type[[event]],
 }
 
@@ -27,7 +27,7 @@ type CancelableEventHandler<TYPE> = struct {
     ...TYPE,
 }
 
-struct PlayerEffects {
+struct PlayerEventEffects {
     /// Entity effects to apply to the player.
     side_effects?: [EntityEffect] @ 1..,
 
@@ -46,6 +46,8 @@ struct PlayerEffects {
 
 	/// XP to add.
 	grant_experience?: int,
+
+    run_function?: #[id(registry="function", tags="allowed")] string,
 }
 
 /// Block will disappear and reappear client-side if cancelled.
@@ -69,14 +71,12 @@ dispatch suggestion:event_type["player/block_break"] to CancelableEventHandler<s
             run_function?: #[id="function"] string,
         },
 
+        /// Ran before the tool receives damage if applicable.
         player?: struct {
             /// Whether to attempt to damage the tool used to break the block if applicable. Defaults to `true`.
             damage_tool?: boolean,
 
-            /// Ran before the tool receives damage if applicable.
-            run_function?: #[id(registry="function", tags="allowed")] string,
-
-            ...PlayerEffects,
+            ...PlayerEventEffects,
         },
     },
 }>
@@ -98,12 +98,8 @@ dispatch suggestion:event_type["player/block_trample"] to CancelableEventHandler
             run_function?: #[id="function"] string,
         },
 
-        player?: struct {
-            /// Ran before the crop is destroyed if applicable.
-            run_function?: #[id(registry="function", tags="allowed")] string,
-
-            ...PlayerEffects,
-        },
+        /// Ran before the crop is destroyed if applicable.
+        player?: PlayerEventEffects,
     },
 }>
 
@@ -125,15 +121,13 @@ dispatch suggestion:event_type["player/block_place"] to CancelableEventHandler<s
             run_function?: #[id="function"] string,
         },
 
+        /// Ran before the item is consumed if applicable.
         player?: struct {
             /// Whether to consume the item used to place the block if applicable. Defaults to `true`.
             /// Client-side, the item will pop back into the slot if set to `false`.
             consume_item?: boolean,
 
-            /// Ran before the item is consumed if applicable.
-            run_function?: #[id(registry="function", tags="allowed")] string,
-
-            ...PlayerEffects,
+            ...PlayerEventEffects,
         },
     },
 }>
@@ -142,7 +136,7 @@ dispatch suggestion:event_type["player/block_place"] to CancelableEventHandler<s
 dispatch suggestion:event_type["player/block_interact"] to struct PlayerBlockInteract {
     block?: BlockPredicate,
 
-    /// Item used by the player to interact with the block, use an empty object (`{}`) to check if the player broke the block without a tool.
+    /// Item used by the player to interact with the block, use an empty object (`{}`) to check if the player interacted without an item.
     item?: (ItemPredicate | struct {}),
 
     effects?: struct {
@@ -151,20 +145,48 @@ dispatch suggestion:event_type["player/block_interact"] to struct PlayerBlockInt
         },
 
         player?: struct {
-            ...PlayerEffects,
+            /// Whether to consume the item used while interacting with the block if applicable. Defaults to `true`.
+            /// Client-side, the item will pop back into the slot if set to `false`.
+            consume_item?: boolean,
+
+            ...PlayerEventEffects,
         },
     }
 }
 
-dispatch suggestion:event_type["player/entity_interact"] to struct PlayerEntityInteract {
+struct EntityEventEffects {
+    /// Entity effects to apply. Some effects will silently fail if the entity is non-living.
+    side_effects?: [EntityEffect] @ 1..,
 
+    run_function?: #[id="function"] string,
+}
+
+dispatch suggestion:event_type["player/entity_interact"] to struct PlayerEntityInteract {
+    /// Checks predicates against the entity being targeted
+    /// Behaves like `conditions`; if this is not met, the event handler will not run.
+    target?: (LootCondition | [LootCondition]),
+
+    /// Item used by the player to interact with the entity, use an empty object (`{}`) to check if the player interacted without an item.
+    item?: (ItemPredicate | struct {}),
+
+    effects?: struct {
+        target?: EntityEventEffects,
+
+        player?: struct {
+            /// Whether to consume the item used while interacting with the entity if applicable. Defaults to `true`.
+            /// Client-side, the item will pop back into the slot if set to `false`.
+            consume_item?: boolean,
+
+            ...PlayerEventEffects,
+        },
+    }
 }
 
 dispatch suggestion:event_type["player/consume_item"] to struct PlayerConsumeItem {
 
 }
 
-/// Runs after block_interact if applicable.
+/// Ran after block_interact if applicable.
 dispatch suggestion:event_type["player/interface_open"] to struct PlayerInterfaceOpen {
     
 }
