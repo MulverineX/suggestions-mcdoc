@@ -53,3 +53,28 @@ execute as @e[actors=<actors group id>]
 
 execute via <actors group id>|<data storage|entity|block <target> <path.To.Actors.Group.ID>>
 ```
+
+## Implementation
+Actors groups are a datapack-accessible manager of custom entity reference maps, allowing for very optimized selection of groups of entities, similarly to how `@a` limits the entity list to just players without any filtering required. To put it in perspective, it's like each actor group is your own custom selector, where instead of getting all living entities in the world, you get your list, which is inherently better for performance due to a much shorter iteration time.
+
+todo: more technical explanation, see [EfficientTeams](https://github.com/Slackow/EfficientTeams) for an example
+
+## Motivations & Background
+This proposal is specifically for Minecraft: Java Edition and the performance problems that have plagued datapack creators forever.
+
+One of the greatest scourges to datapack performance is the widespread usage of a common syntax pattern, `execute as @e[tag=example]`. This is largely due to the fact that when this evaluates, every single entity in the world is iterated through and checked for this tag. 
+
+Why not cache all entities that have any given tag, allowing for faster selectors? 
+1. Most tags are not exclusively used to select entities out of the entire world, most come with an optimized distance-limited syntax or are used to manage flags/state on an entity you already have selected from the world. 
+2. Storing entity lists for all of these tags would be a poor performance decision
+3. Mojang already implicitly decided to not do this when implementing tags; they optimized other selector arguments, but not this one, and if they were going to optimize it they probably would’ve done so at this point. Additionally, many discussions on the poor performance of global entity tag checks have been conducted with mojang devs lurking in MCC, to no avail.
+
+Why not use the `tick` enchantment trigger along with the `run_function` entity effect?
+1. Doesn’t allow for multi-context management; eg. `ride @s mount @e[actors=example:mount,limit=1]`
+2. Every function call has a cost; when executing as many entities, it's more efficient to do `execute as @e[tag=example] at @s if block ~ ~-1 ~ dirt run particle angry_villager ~ ~1 ~ 0 0 0 0 1` than to run the particle command in a function as each entity, and this even applies if you’re running several commands at once
+
+Why not cache all entities that are in a team? (example here: https://github.com/Slackow/EfficientTeams)
+1. Entities can only be on one team at a time, which would arbitrarily limit complex/interconnected system designs.
+2. Similar performance concerns to tags; not every usage of teams needs this.
+
+Another consideration: single-entity actor groups are just as efficient as a hardcoded UUID, without being hardcoded or forced to use a less efficient macro.

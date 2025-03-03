@@ -183,12 +183,41 @@ dispatch suggestion:event_type["player/entity_interact"] to struct PlayerEntityI
 }
 
 dispatch suggestion:event_type["player/consume_item"] to struct PlayerConsumeItem {
+    /// Item consumed by the player.
+    item?: ItemPredicate,
 
+    effects?: struct {
+        player?: PlayerEventEffects,
+    }
 }
 
-/// Ran after block_interact if applicable.
+/// Ran after block_interact/entity_interact if applicable.
 dispatch suggestion:event_type["player/interface_open"] to struct PlayerInterfaceOpen {
-    
+    // TODO: Make this into a dispatcher
+    /// Behaves like `conditions`; if this is not met, the event handler will not run.
+    interface: (
+        struct {
+            type: "minecraft:block_entity",
+            
+            block_entity?: #[id="block_entity_type"] string,
+
+            block?: BlockPredicate,
+
+            components?: struct {
+                [#[id="data_component"] string]?: minecraft:data_component[[%key]],
+            },
+        } |
+        struct {
+            type: "minecraft:entity",
+
+            entity?: (LootCondition | [LootCondition]),
+        } |
+        struct {
+            type: "minecraft:inventory"
+        } |
+    ),
+
+    // TODO: WIP
 }
 
 dispatch suggestion:event_type["player/interface_interact"] to struct PlayerInterfaceInteract {
