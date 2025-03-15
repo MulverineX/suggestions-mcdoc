@@ -1,0 +1,3 @@
+dispatch minecraft:data_component[relation] to struct Relation {
+    [#[id="relation"] string]?: (int[] @ 4 | [int @ 4] @ 1..),
+}

@@ -19,9 +19,8 @@ enum(string) ScoreboardOperation {
     Maximum = "max",
 }
 
-// #META#: This part of this suggestion is optional.
-dispatch minecraft:entity_effect[change_actor_groups] to struct EntityEffectChangeActorGroups {
-    /// Actor groups to add the entity to.
+dispatch minecraft:entity_effect[change_relation] to struct EntityEffectChangeRelation {
+    /// Relation to add the entity to.
     add?: struct {
         [#[id="actor_group"] string]?: struct {}
     },
