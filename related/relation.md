@@ -45,8 +45,9 @@ Relation references are represented in a new entity data component, `minecraft:r
 Private relations are stored on the entity as a list of entity UUID integer arrays.
 Note: Some built-in private relations are "ephemeral"; they cannot be removed and do not get stored on the entity but can be used the same way (eg. `minecraft:passengers`).
 
-Relation groups are stored on the entity as a single group reference UUID integer array.
-They are an in-memory entity reference set managed by the game. Entities that are loaded/created/modified that have a corresponding `relation` component are added to a corresponding reference set indexed by the reference UUID.
+Relation groups are stored on the entity as a single group reference UUID integer array. They are an in-memory entity reference set managed by the game. 
+Entities that are loaded/created/modified that have a corresponding `relation` component are added to a corresponding reference set indexed by the reference UUID.
+Entities that are unloaded/die/modified will remove themselves from the corresponding reference set.
 
 ## Motivations & Background
 This proposal is specifically for Minecraft: Java Edition and the performance problems that have plagued datapack creators forever.
